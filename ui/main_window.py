@@ -21,6 +21,7 @@ from services.device_service import DeviceService
 from ui.navigation_manager import NavigationManager
 from ui.pages.dashboard_page import DashboardPage
 from ui.pages.device_list_page import DeviceListPage
+from ui.pages.placeholder_page import PlaceholderPage
 
 
 class MainWindow(QMainWindow):
@@ -43,6 +44,19 @@ class MainWindow(QMainWindow):
         session = SessionLocal()
         device_service = DeviceService(DeviceRepository(session))
         self.navigation_manager.register(DeviceListPage(device_service))
+
+        placeholder_pages = {
+            "customers": PlaceholderPage("customers", "Customer Management"),
+            "suppliers": PlaceholderPage("suppliers", "Supplier Management"),
+            "sites": PlaceholderPage("sites", "Site Management"),
+            "calibrations": PlaceholderPage("calibrations", "Calibration Management"),
+            "certificates": PlaceholderPage("certificates", "Certificate Management"),
+            "reports": PlaceholderPage("reports", "Reports"),
+            "settings": PlaceholderPage("settings", "Settings"),
+        }
+        for page in placeholder_pages.values():
+            self.navigation_manager.register(page)
+
         self.navigation_manager.navigate("dashboard")
 
     def _create_menu_bar(self) -> None:
@@ -101,10 +115,24 @@ class MainWindow(QMainWindow):
         nav_title.setStyleSheet("font-size: 13px; font-weight: 600; color: #44506b;")
         nav_layout.addWidget(nav_title)
 
-        placeholder = QLabel("Left navigation panel placeholder")
-        placeholder.setWordWrap(True)
-        placeholder.setStyleSheet("color: #6b7280; font-size: 12px;")
-        nav_layout.addWidget(placeholder)
+        self.navigation_buttons = {}
+        for page_name, label in [
+            ("dashboard", "Dashboard"),
+            ("devices", "Device Management"),
+            ("customers", "Customer Management"),
+            ("suppliers", "Supplier Management"),
+            ("sites", "Site Management"),
+            ("calibrations", "Calibration Management"),
+            ("certificates", "Certificate Management"),
+            ("reports", "Reports"),
+            ("settings", "Settings"),
+        ]:
+            button = QPushButton(label, self)
+            button.setCheckable(True)
+            button.clicked.connect(lambda checked=False, name=page_name: self.navigation_manager.navigate(name))
+            nav_layout.addWidget(button)
+            self.navigation_buttons[page_name] = button
+
         nav_layout.addStretch(1)
 
         self._stacked_pages = QStackedWidget(self)
