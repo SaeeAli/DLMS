@@ -15,8 +15,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from database.session import SessionLocal
+from repositories.device_repository import DeviceRepository
+from services.device_service import DeviceService
 from ui.navigation_manager import NavigationManager
 from ui.pages.dashboard_page import DashboardPage
+from ui.pages.device_list_page import DeviceListPage
 
 
 class MainWindow(QMainWindow):
@@ -35,6 +39,10 @@ class MainWindow(QMainWindow):
 
         self.navigation_manager = NavigationManager(self._stacked_pages)
         self.navigation_manager.register(DashboardPage())
+
+        session = SessionLocal()
+        device_service = DeviceService(DeviceRepository(session))
+        self.navigation_manager.register(DeviceListPage(device_service))
         self.navigation_manager.navigate("dashboard")
 
     def _create_menu_bar(self) -> None:
@@ -51,6 +59,10 @@ class MainWindow(QMainWindow):
         dashboard_action.triggered.connect(lambda: self.navigation_manager.navigate("dashboard"))
         view_menu.addAction(dashboard_action)
 
+        devices_action = QAction("Device Management", self)
+        devices_action.triggered.connect(lambda: self.navigation_manager.navigate("devices"))
+        view_menu.addAction(devices_action)
+
     def _create_tool_bar(self) -> None:
         toolbar = QToolBar("Main Toolbar", self)
         toolbar.setMovable(False)
@@ -59,6 +71,10 @@ class MainWindow(QMainWindow):
         dashboard_button = QPushButton("Dashboard", self)
         dashboard_button.clicked.connect(lambda: self.navigation_manager.navigate("dashboard"))
         toolbar.addWidget(dashboard_button)
+
+        devices_button = QPushButton("Device Management", self)
+        devices_button.clicked.connect(lambda: self.navigation_manager.navigate("devices"))
+        toolbar.addWidget(devices_button)
 
     def _create_status_bar(self) -> None:
         status_bar = QStatusBar(self)
