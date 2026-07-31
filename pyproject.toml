@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dlms"
+version = "0.1.0"
+description = "Device Lifecycle Management System"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "PySide6>=6.8.0",
+    "SQLAlchemy>=2.0.35",
+]
+
+[tool.setuptools]
+packages = ["app", "config", "core", "database", "models", "repositories", "services", "ui", "utils", "widgets"]
