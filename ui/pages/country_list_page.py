@@ -24,7 +24,7 @@ from ui.widgets.country_table_model import CountryTableModel
 
 
 class CountryListPage(BasePage):
-    """Page for managing study-country assignments through the service layer."""
+    """Page for managing country and site records through the service layer."""
 
     page_name = "countries"
     country_selected = Signal(object)
@@ -72,7 +72,7 @@ class CountryListPage(BasePage):
 
         search_label = QLabel("Search:")
         self.search_input = QLineEdit(self)
-        self.search_input.setPlaceholderText("Customer, Study Number, Country, Status")
+        self.search_input.setPlaceholderText("Study, Country, Site Number, Status")
         self.search_input.textChanged.connect(self._apply_search)
         search_layout.addWidget(search_label)
         search_layout.addWidget(self.search_input, 1)
@@ -102,19 +102,24 @@ class CountryListPage(BasePage):
 
     def refresh_countries(self) -> None:
         selected_country_id = self._selected_country_id
-        countries = self.service.get_all()
+        countries = self.service.get_country_records()
         self.table_model.set_countries(countries)
         self._restore_selection(selected_country_id)
 
     def add_country(self) -> None:
-        dialog = CountryFormDialog(self.service.get_study_options(), self)
+        dialog = CountryFormDialog(self.service.get_customer_options(), self.service.get_study_options(), self)
         if dialog.exec() == CountryFormDialog.Accepted:
             try:
+                customer_id = dialog.selected_customer_id()
                 study = self.service.study_repository.get_by_id(dialog.selected_study_id() or "")
-                self.service.create_country(
+                if customer_id is None:
+                    raise ValueError("customer is required")
+                if study is None or study.customer_id != customer_id:
+                    raise ValueError("study is required")
+                self.service.create_country_record(
                     study=study,
-                    name=dialog.name_input.text().strip(),
-                    country_code=dialog.country_code_input.text().strip() or None,
+                    country_name=dialog.country_input.text().strip(),
+                    site_number=dialog.site_number_input.text().strip(),
                     status=dialog.status_combo.currentText(),
                     notes=dialog.notes_input.toPlainText().strip() or None,
                 )
@@ -127,21 +132,26 @@ class CountryListPage(BasePage):
             QMessageBox.information(self, "Selection Required", "Select a country to edit.")
             return
 
-        country = self.service.get_by_id(self._selected_country_id)
+        country = self.service.get_country_record_by_id(self._selected_country_id)
         if country is None:
             QMessageBox.warning(self, "Not Found", "The selected country could not be found.")
             return
 
-        dialog = CountryFormDialog(self.service.get_study_options(), self)
+        dialog = CountryFormDialog(self.service.get_customer_options(), self.service.get_study_options(), self)
         dialog.set_country(country)
         if dialog.exec() == CountryFormDialog.Accepted:
             try:
+                customer_id = dialog.selected_customer_id()
                 study = self.service.study_repository.get_by_id(dialog.selected_study_id() or "")
-                self.service.update_country(
+                if customer_id is None:
+                    raise ValueError("customer is required")
+                if study is None or study.customer_id != customer_id:
+                    raise ValueError("study is required")
+                self.service.update_country_record(
                     country,
                     study=study,
-                    name=dialog.name_input.text().strip(),
-                    country_code=dialog.country_code_input.text().strip() or None,
+                    country_name=dialog.country_input.text().strip(),
+                    site_number=dialog.site_number_input.text().strip(),
                     status=dialog.status_combo.currentText(),
                     notes=dialog.notes_input.toPlainText().strip() or None,
                 )
@@ -154,7 +164,7 @@ class CountryListPage(BasePage):
             QMessageBox.information(self, "Selection Required", "Select a country to delete.")
             return
 
-        country = self.service.get_by_id(self._selected_country_id)
+        country = self.service.get_country_record_by_id(self._selected_country_id)
         if country is None:
             QMessageBox.warning(self, "Not Found", "The selected country could not be found.")
             return
@@ -162,12 +172,12 @@ class CountryListPage(BasePage):
         confirmation = QMessageBox.question(
             self,
             "Confirm Delete",
-            f"Delete country {country.country.name if country.country is not None else ''} from study?",
+            f"Delete site {country.site_number} from country management?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if confirmation == QMessageBox.StandardButton.Yes:
             try:
-                self.service.delete_country(country)
+                self.service.delete_country_record(country)
                 self.refresh_countries()
             except ValueError as error:
                 QMessageBox.warning(self, "Delete Not Allowed", str(error))

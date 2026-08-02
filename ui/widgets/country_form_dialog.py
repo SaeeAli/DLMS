@@ -12,35 +12,42 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from models.customer import Customer
 from models.study import Study
-from models.study_country import StudyCountry
+from models.site import Site
 
 
 class CountryFormDialog(QDialog):
-    """Dialog for creating or editing a study-country assignment."""
+    """Dialog for creating or editing country management records."""
 
-    def __init__(self, studies: list[Study], parent: QWidget | None = None) -> None:
+    def __init__(self, customers: list[Customer], studies: list[Study], parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Country")
         self.resize(480, 320)
 
+        self._all_studies = studies
+
+        self.customer_combo = QComboBox(self)
+        self.customer_combo.addItem("", "")
+        for customer in customers:
+            self.customer_combo.addItem(customer.name, customer.id)
+
         self.study_combo = QComboBox(self)
         self.study_combo.addItem("", "")
-        for study in studies:
-            label = f"{study.study_number} - {study.customer.name if study.customer else ''}".strip()
-            self.study_combo.addItem(label, study.id)
+        self.customer_combo.currentIndexChanged.connect(self._on_customer_changed)
 
-        self.name_input = QLineEdit(self)
-        self.country_code_input = QLineEdit(self)
+        self.country_input = QLineEdit(self)
+        self.site_number_input = QLineEdit(self)
         self.status_combo = QComboBox(self)
         self.status_combo.addItems(["Active", "Inactive"])
         self.notes_input = QTextEdit(self)
 
         layout = QVBoxLayout(self)
         form_layout = QFormLayout()
+        form_layout.addRow("Customer", self.customer_combo)
         form_layout.addRow("Study", self.study_combo)
-        form_layout.addRow("Country Name", self.name_input)
-        form_layout.addRow("Country Code", self.country_code_input)
+        form_layout.addRow("Country", self.country_input)
+        form_layout.addRow("Site Number", self.site_number_input)
         form_layout.addRow("Status", self.status_combo)
         form_layout.addRow("Notes", self.notes_input)
         layout.addLayout(form_layout)
@@ -55,16 +62,42 @@ class CountryFormDialog(QDialog):
         button_layout.addWidget(cancel_button)
         layout.addLayout(button_layout)
 
-    def set_country(self, assignment: StudyCountry) -> None:
-        self.name_input.setText(assignment.country.name if assignment.country is not None else "")
-        self.country_code_input.setText(assignment.country.country_code if assignment.country is not None else "")
-        self.status_combo.setCurrentText(assignment.status or "Active")
-        self.notes_input.setPlainText(assignment.notes or "")
-        if assignment.study_id is not None:
-            index = self.study_combo.findData(assignment.study_id)
-            if index >= 0:
-                self.study_combo.setCurrentIndex(index)
+        self._populate_studies(None)
+
+    def set_country(self, site: Site) -> None:
+        self.country_input.setText(site.study_country.country.name if site.study_country and site.study_country.country else "")
+        self.site_number_input.setText(site.site_number or "")
+        self.status_combo.setCurrentText(site.status or "Active")
+        self.notes_input.setPlainText(site.notes or "")
+        if site.study_country_id is not None:
+            assignment = site.study_country
+            study = assignment.study if assignment is not None else None
+            customer_id = study.customer_id if study is not None else None
+            study_id = assignment.study_id if assignment is not None else None
+            customer_index = self.customer_combo.findData(customer_id)
+            if customer_index >= 0:
+                self.customer_combo.setCurrentIndex(customer_index)
+            study_index = self.study_combo.findData(study_id)
+            if study_index >= 0:
+                self.study_combo.setCurrentIndex(study_index)
+
+    def selected_customer_id(self) -> str | None:
+        value = self.customer_combo.currentData()
+        return value if value else None
 
     def selected_study_id(self) -> str | None:
         value = self.study_combo.currentData()
         return value if value else None
+
+    def _on_customer_changed(self) -> None:
+        self._populate_studies(self.selected_customer_id())
+
+    def _populate_studies(self, customer_id: str | None) -> None:
+        self.study_combo.blockSignals(True)
+        self.study_combo.clear()
+        self.study_combo.addItem("", "")
+        for study in self._all_studies:
+            if customer_id and study.customer_id != customer_id:
+                continue
+            self.study_combo.addItem(study.study_number or "", study.id)
+        self.study_combo.blockSignals(False)

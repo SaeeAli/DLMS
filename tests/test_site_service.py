@@ -33,7 +33,8 @@ def test_site_service_prevents_duplicate_site_number_per_study_country() -> None
         study = Study(study_number="ST-100", customer=customer)
         study_repository.create(study)
 
-        assignment = country_service.create_country(study=study, name="Germany", country_code="DE")
+        created = country_service.create_country_record(study=study, country_name="Germany", site_number="S-000", status="Active")
+        assignment = created.study_country
         site_service.create_site(study_country=assignment, site_number="S-001", name="Berlin Site")
 
         try:

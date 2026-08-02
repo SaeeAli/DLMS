@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from models.country import Country
+from models.customer import Customer
+from models.site import Site
 from models.study import Study
 from models.study_country import StudyCountry
 from repositories.country_repository import CountryRepository
@@ -11,7 +13,7 @@ from services.base_service import BaseService
 
 
 class CountryService(BaseService[StudyCountry]):
-    """Service for managing country assignments within studies."""
+    """Service for managing country and site records in a unified workflow."""
 
     def __init__(
         self,
@@ -25,19 +27,135 @@ class CountryService(BaseService[StudyCountry]):
         self.study_repository = study_repository
         self.site_repository = site_repository
 
-    def create_country(
+    def get_country_records(self) -> list[Site]:
+        return self.site_repository.get_all()
+
+    def get_country_record_by_id(self, site_id: str) -> Site | None:
+        return self.site_repository.get_by_id(site_id)
+
+    def create_country_record(
         self,
         *,
         study: Study | None,
-        name: str,
-        country_code: str | None = None,
+        country_name: str,
+        site_number: str,
         status: str = "Active",
         notes: str | None = None,
-    ) -> StudyCountry:
-        self._validate_required_fields(study=study, name=name)
+    ) -> Site:
+        self._validate_required_fields(study=study, country_name=country_name, site_number=site_number)
 
-        country = self._get_or_create_country(name=name, country_code=country_code)
-        self._validate_unique_country(study=study, country=country, existing_id=None)
+        country = self._get_or_create_country(name=country_name)
+        assignment = self._get_or_create_assignment(study=study, country=country, status=status, notes=notes)
+        self._validate_unique_site_number(assignment=assignment, site_number=site_number, existing_site_id=None)
+
+        site = Site(
+            study_country=assignment,
+            site_number=site_number.strip(),
+            name=site_number.strip(),
+            status=status.strip() if status else "Active",
+            notes=notes.strip() if notes else None,
+        )
+        return self.site_repository.create(site)
+
+    def update_country_record(
+        self,
+        site: Site,
+        *,
+        study: Study | None,
+        country_name: str,
+        site_number: str,
+        status: str = "Active",
+        notes: str | None = None,
+    ) -> Site:
+        if site.id is None:
+            raise ValueError("site id is required")
+
+        self._validate_required_fields(study=study, country_name=country_name, site_number=site_number)
+
+        country = self._get_or_create_country(name=country_name)
+        assignment = self._get_or_create_assignment(study=study, country=country, status=status, notes=notes)
+        self._validate_unique_site_number(assignment=assignment, site_number=site_number, existing_site_id=site.id)
+
+        site.study_country = assignment
+        site.site_number = site_number.strip()
+        site.name = site_number.strip()
+        site.status = status.strip() if status else "Active"
+        site.notes = notes.strip() if notes else None
+        self.site_repository.update(site)
+
+        assignment.status = status.strip() if status else "Active"
+        assignment.notes = notes.strip() if notes else None
+        self.update(assignment)
+        return site
+
+    def delete_country_record(self, site: Site) -> None:
+        if site.id is None:
+            raise ValueError("site id is required")
+
+        assignment = site.study_country
+        self.site_repository.delete(site)
+        if assignment is not None and assignment.id is not None:
+            remaining_sites = [existing for existing in self.site_repository.get_all() if existing.study_country_id == assignment.id]
+            if not remaining_sites:
+                self.delete(assignment)
+
+    def search_countries(self, query: str) -> list[Site]:
+        if not query:
+            return self.get_country_records()
+
+        normalized = query.strip().lower()
+        return [
+            site
+            for site in self.get_country_records()
+            if normalized in (site.study_country.study.study_number or "").lower()
+            or normalized in (site.study_country.country.name or "").lower()
+            or normalized in (site.site_number or "").lower()
+            or normalized in (site.status or "").lower()
+        ]
+
+    def get_study_options(self) -> list[Study]:
+        return self.study_repository.get_all()
+
+    def get_customer_options(self) -> list[Customer]:
+        customers = []
+        seen_ids: set[str] = set()
+        for study in self.get_study_options():
+            customer = study.customer
+            if customer is None or customer.id is None:
+                continue
+            if customer.id in seen_ids:
+                continue
+            seen_ids.add(customer.id)
+            customers.append(customer)
+        return customers
+
+    def _validate_required_fields(self, *, study: Study | None, country_name: str, site_number: str) -> None:
+        if study is None:
+            raise ValueError("study is required")
+        if not country_name or not country_name.strip():
+            raise ValueError("country name is required")
+        if not site_number or not site_number.strip():
+            raise ValueError("site_number is required")
+
+    def _validate_unique_site_number(self, *, assignment: StudyCountry, site_number: str, existing_site_id: str | None) -> None:
+        normalized = site_number.strip().lower()
+        for existing in self.site_repository.get_all():
+            if existing.id == existing_site_id:
+                continue
+            if existing.study_country_id != assignment.id:
+                continue
+            if (existing.site_number or "").strip().lower() == normalized:
+                raise ValueError("A site with this site number already exists for this study country")
+
+    def _get_or_create_assignment(self, *, study: Study | None, country: Country, status: str, notes: str | None) -> StudyCountry:
+        if study is None:
+            raise ValueError("study is required")
+
+        for existing in self.get_all():
+            if existing.study_id == study.id and existing.country_id == country.id:
+                existing.status = status.strip() if status else "Active"
+                existing.notes = notes.strip() if notes else None
+                return self.update(existing)
 
         assignment = StudyCountry(
             study=study,
@@ -47,81 +165,11 @@ class CountryService(BaseService[StudyCountry]):
         )
         return self.create(assignment)
 
-    def update_country(
-        self,
-        assignment: StudyCountry,
-        *,
-        study: Study | None,
-        name: str,
-        country_code: str | None = None,
-        status: str = "Active",
-        notes: str | None = None,
-    ) -> StudyCountry:
-        if assignment.id is None:
-            raise ValueError("country assignment id is required")
-
-        self._validate_required_fields(study=study, name=name)
-        country = self._get_or_create_country(name=name, country_code=country_code)
-        self._validate_unique_country(study=study, country=country, existing_id=assignment.id)
-
-        assignment.study = study
-        assignment.country = country
-        assignment.status = status.strip() if status else "Active"
-        assignment.notes = notes.strip() if notes else None
-        return self.update(assignment)
-
-    def delete_country(self, assignment: StudyCountry) -> None:
-        if assignment.id is None:
-            raise ValueError("country assignment id is required")
-        if assignment.sites:
-            raise ValueError("Cannot delete a country assignment that has sites")
-        self.delete(assignment)
-
-    def search_countries(self, query: str) -> list[StudyCountry]:
-        if not query:
-            return self.get_all()
-
-        normalized = query.strip().lower()
-        return [
-            assignment
-            for assignment in self.get_all()
-            if normalized in (assignment.study.study_number or "").lower()
-            or normalized in (assignment.study.customer.name or "").lower()
-            or normalized in (assignment.country.name or "").lower()
-            or normalized in (assignment.country.country_code or "").lower()
-            or normalized in (assignment.status or "").lower()
-        ]
-
-    def get_study_options(self) -> list[Study]:
-        return self.study_repository.get_all()
-
-    def _validate_required_fields(self, *, study: Study | None, name: str) -> None:
-        if study is None:
-            raise ValueError("study is required")
-        if not name or not name.strip():
-            raise ValueError("country name is required")
-
-    def _validate_unique_country(self, *, study: Study | None, country: Country, existing_id: str | None) -> None:
-        if study is None:
-            return
-
-        for existing in self.get_all():
-            if existing.id == existing_id:
-                continue
-            if existing.study_id == study.id and existing.country_id == country.id:
-                raise ValueError("A country with this name already exists for this study")
-
-    def _get_or_create_country(self, *, name: str, country_code: str | None) -> Country:
+    def _get_or_create_country(self, *, name: str) -> Country:
         normalized_name = name.strip().lower()
         for existing in self.country_repository.get_all():
             if (existing.name or "").strip().lower() == normalized_name:
-                if country_code and not existing.country_code:
-                    existing.country_code = country_code.strip()
-                    self.country_repository.update(existing)
                 return existing
 
-        country = Country(
-            name=name.strip(),
-            country_code=country_code.strip() if country_code else None,
-        )
+        country = Country(name=name.strip())
         return self.country_repository.create(country)
