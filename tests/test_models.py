@@ -15,6 +15,7 @@ from models import (
     QuoteItem,
     Site,
     Study,
+    StudyCountry,
     Supplier,
 )
 
@@ -27,8 +28,8 @@ def test_models_create_and_link_relationships() -> None:
         customer = Customer(name="Acme Corp", contact_email="sales@example.com")
         study = Study(study_number="ST-001", customer=customer)
         country = Country(name="United Kingdom", country_code="GB")
-        study.countries.append(country)
-        site = Site(name="North Site", site_code="NS-001", customer=customer, country=country)
+        study_country = StudyCountry(study=study, country=country, status="Active")
+        site = Site(name="North Site", site_number="NS-001", study_country=study_country)
         supplier = Supplier(name="Precision Instruments", supplier_code="PI-001", contact_email="support@example.com")
         device = Device(brand="Fluke", device_type="Multimeter", model="Model X", serial_number="SN-001", asset_number="AST-001")
 
@@ -48,14 +49,14 @@ def test_models_create_and_link_relationships() -> None:
             issue_date=datetime(2024, 1, 16),
         )
 
-        session.add_all([customer, study, country, site, supplier, device, quote, quote_item, device_exchange, calibration_job, calibration_certificate])
+        session.add_all([customer, study, country, study_country, site, supplier, device, quote, quote_item, device_exchange, calibration_job, calibration_certificate])
         session.commit()
 
         session.refresh(customer)
         session.refresh(quote)
         assert customer.studies[0].study_number == "ST-001"
-        assert study.countries[0].country_code == "GB"
-        assert country.sites[0].site_code == "NS-001"
+        assert study.study_countries[0].country.country_code == "GB"
+        assert study_country.sites[0].site_number == "NS-001"
         assert quote.quote_items[0].device is device
         assert quote.calibration_job is calibration_job
         assert calibration_job.device_exchange is device_exchange

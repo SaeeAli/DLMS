@@ -16,17 +16,24 @@ from PySide6.QtWidgets import (
 )
 
 from database.session import SessionLocal
+from repositories.country_repository import CountryRepository
 from repositories.customer_repository import CustomerRepository
 from repositories.device_repository import DeviceRepository
+from repositories.site_repository import SiteRepository
+from repositories.study_country_repository import StudyCountryRepository
 from repositories.study_repository import StudyRepository
+from services.country_service import CountryService
 from services.customer_service import CustomerService
 from services.device_service import DeviceService
+from services.site_service import SiteService
 from services.study_service import StudyService
 from ui.navigation_manager import NavigationManager
+from ui.pages.country_list_page import CountryListPage
 from ui.pages.customer_list_page import CustomerListPage
 from ui.pages.dashboard_page import DashboardPage
 from ui.pages.device_list_page import DeviceListPage
 from ui.pages.placeholder_page import PlaceholderPage
+from ui.pages.site_list_page import SiteListPage
 from ui.pages.study_list_page import StudyListPage
 
 
@@ -49,16 +56,20 @@ class MainWindow(QMainWindow):
         self.navigation_manager.register(DashboardPage())
 
         session = SessionLocal()
+        study_country_repository = StudyCountryRepository(session)
         device_service = DeviceService(DeviceRepository(session))
         customer_service = CustomerService(CustomerRepository(session))
         study_service = StudyService(StudyRepository(session), CustomerRepository(session))
+        country_service = CountryService(study_country_repository, CountryRepository(session), StudyRepository(session), SiteRepository(session))
+        site_service = SiteService(SiteRepository(session), study_country_repository)
         self.navigation_manager.register(DeviceListPage(device_service))
         self.navigation_manager.register(CustomerListPage(customer_service))
         self.navigation_manager.register(StudyListPage(study_service))
+        self.navigation_manager.register(CountryListPage(country_service))
+        self.navigation_manager.register(SiteListPage(site_service))
 
         placeholder_pages = {
             "suppliers": PlaceholderPage("suppliers", "Supplier Management"),
-            "sites": PlaceholderPage("sites", "Site Management"),
             "calibrations": PlaceholderPage("calibrations", "Calibration Management"),
             "certificates": PlaceholderPage("certificates", "Certificate Management"),
             "reports": PlaceholderPage("reports", "Reports"),
@@ -105,6 +116,10 @@ class MainWindow(QMainWindow):
         studies_button.clicked.connect(lambda: self._navigate_to_page("studies"))
         toolbar.addWidget(studies_button)
 
+        countries_button = QPushButton("Country Management", self)
+        countries_button.clicked.connect(lambda: self._navigate_to_page("countries"))
+        toolbar.addWidget(countries_button)
+
     def _create_status_bar(self) -> None:
         status_bar = QStatusBar(self)
         self.setStatusBar(status_bar)
@@ -136,6 +151,7 @@ class MainWindow(QMainWindow):
             ("devices", "Device Management"),
             ("customers", "Customer Management"),
             ("studies", "Study Management"),
+            ("countries", "Country Management"),
             ("suppliers", "Supplier Management"),
             ("sites", "Site Management"),
             ("calibrations", "Calibration Management"),

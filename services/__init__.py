@@ -3,6 +3,7 @@
 from services.base_service import BaseService
 from services.calibration_service import CalibrationService
 from services.certificate_service import CertificateService
+from services.country_service import CountryService
 from services.customer_service import CustomerService
 from services.device_service import DeviceService
 from services.site_service import SiteService
@@ -13,6 +14,7 @@ __all__ = [
     "BaseService",
     "CalibrationService",
     "CertificateService",
+    "CountryService",
     "CustomerService",
     "DeviceService",
     "SiteService",

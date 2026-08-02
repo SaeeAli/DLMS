@@ -5,7 +5,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.base import Base
 from models.mixins import TimestampMixin, UUIDPrimaryKeyMixin
-from models.study_country import StudyCountry
 
 
 class Study(Base, TimestampMixin, UUIDPrimaryKeyMixin):
@@ -20,9 +19,7 @@ class Study(Base, TimestampMixin, UUIDPrimaryKeyMixin):
     customer_id: Mapped[str] = mapped_column(ForeignKey("customers.id"), nullable=False, index=True)
 
     customer: Mapped["Customer"] = relationship(back_populates="studies")
-    countries: Mapped[list["Country"]] = relationship(
-        "Country",
-        secondary=StudyCountry.__tablename__,
-        back_populates="studies",
-        cascade="save-update,merge",
+    study_countries: Mapped[list["StudyCountry"]] = relationship(
+        back_populates="study",
+        cascade="all, delete-orphan",
     )

@@ -5,21 +5,17 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.base import Base
 from models.mixins import TimestampMixin, UUIDPrimaryKeyMixin
-from models.study_country import StudyCountry
 
 
 class Country(Base, TimestampMixin, UUIDPrimaryKeyMixin):
-    """Represents a country used by studies and sites."""
+    """Represents a country that can be linked to many studies."""
 
     __tablename__ = "countries"
 
-    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    country_code: Mapped[str] = mapped_column(String(10), nullable=False, unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    country_code: Mapped[str | None] = mapped_column(String(10), nullable=True, unique=True, index=True)
 
-    studies: Mapped[list["Study"]] = relationship(
-        "Study",
-        secondary=StudyCountry.__tablename__,
-        back_populates="countries",
-        cascade="save-update,merge",
+    study_countries: Mapped[list["StudyCountry"]] = relationship(
+        back_populates="country",
+        cascade="all, delete-orphan",
     )
-    sites: Mapped[list["Site"]] = relationship(back_populates="country", cascade="all, delete-orphan")

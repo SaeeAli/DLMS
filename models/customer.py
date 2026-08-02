@@ -21,4 +21,3 @@ class Customer(Base, TimestampMixin, UUIDPrimaryKeyMixin):
     phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     studies: Mapped[list["Study"]] = relationship(back_populates="customer", cascade="all, delete-orphan")
-    sites: Mapped[list["Site"]] = relationship(back_populates="customer", cascade="all, delete-orphan")

@@ -17,6 +17,7 @@ def test_main_window_registers_all_placeholder_pages() -> None:
         "devices",
         "customers",
         "studies",
+        "countries",
         "suppliers",
         "sites",
         "calibrations",
@@ -36,7 +37,7 @@ def test_navigation_highlights_only_one_button_at_a_time() -> None:
     window = MainWindow()
     window.show()
 
-    for page_name in ["dashboard", "devices", "customers", "studies", "suppliers", "sites", "calibrations", "certificates", "reports", "settings"]:
+    for page_name in ["dashboard", "devices", "customers", "studies", "countries", "sites", "suppliers", "calibrations", "certificates", "reports", "settings"]:
         window.navigation_manager.navigate(page_name)
         active_buttons = [button for button in window.navigation_buttons.values() if button.isChecked()]
         assert len(active_buttons) == 1, f"Expected one active navigation button for {page_name}, got {len(active_buttons)}"

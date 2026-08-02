@@ -26,5 +26,6 @@ __all__ = [
     "QuoteItem",
     "Site",
     "Study",
+    "StudyCountry",
     "Supplier",
 ]
