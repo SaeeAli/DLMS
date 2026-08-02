@@ -19,4 +19,4 @@ class Supplier(Base, TimestampMixin, UUIDPrimaryKeyMixin):
     phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     address: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
-    devices: Mapped[list["Device"]] = relationship(back_populates="supplier", cascade="all, delete-orphan")
+    calibration_jobs: Mapped[list["CalibrationJob"]] = relationship(back_populates="supplier", cascade="all, delete-orphan")

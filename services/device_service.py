@@ -11,27 +11,52 @@ class DeviceService(BaseService[Device]):
     def __init__(self, repository: DeviceRepository) -> None:
         super().__init__(repository)
 
-    def create_device(self, *, asset_tag: str, model: str | None = None, serial_number: str | None = None) -> Device:
-        self._validate_required_fields(asset_tag=asset_tag)
+    def create_device(
+        self,
+        *,
+        asset_tag: str | None = None,
+        asset_number: str | None = None,
+        brand: str | None = None,
+        device_type: str | None = None,
+        model: str | None = None,
+        serial_number: str | None = None,
+    ) -> Device:
+        identifier = (asset_tag or asset_number or "").strip()
+        self._validate_required_fields(asset_tag=identifier)
         self._validate_unique_serial_number(serial_number=serial_number, existing_id=None)
 
         device = Device(
-            asset_tag=asset_tag.strip(),
+            brand=brand.strip() if brand else None,
+            device_type=device_type.strip() if device_type else None,
             model=model.strip() if model else None,
             serial_number=serial_number.strip() if serial_number else None,
+            asset_number=identifier,
         )
         return self.create(device)
 
-    def update_device(self, device: Device, *, asset_tag: str, model: str | None = None, serial_number: str | None = None) -> Device:
+    def update_device(
+        self,
+        device: Device,
+        *,
+        asset_tag: str | None = None,
+        asset_number: str | None = None,
+        brand: str | None = None,
+        device_type: str | None = None,
+        model: str | None = None,
+        serial_number: str | None = None,
+    ) -> Device:
         if device.id is None:
             raise ValueError("device id is required")
 
-        self._validate_required_fields(asset_tag=asset_tag)
+        identifier = (asset_tag or asset_number or device.asset_number or "").strip()
+        self._validate_required_fields(asset_tag=identifier)
         self._validate_unique_serial_number(serial_number=serial_number, existing_id=device.id)
 
-        device.asset_tag = asset_tag.strip()
+        device.brand = brand.strip() if brand else None
+        device.device_type = device_type.strip() if device_type else None
         device.model = model.strip() if model else None
         device.serial_number = serial_number.strip() if serial_number else None
+        device.asset_number = identifier or None
         return self.update(device)
 
     def delete_device(self, device: Device) -> None:

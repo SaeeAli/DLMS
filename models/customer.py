@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -23,4 +21,5 @@ class Customer(Base, TimestampMixin, UUIDPrimaryKeyMixin):
     contact_email: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
+    studies: Mapped[list["Study"]] = relationship(back_populates="customer", cascade="all, delete-orphan")
     sites: Mapped[list["Site"]] = relationship(back_populates="customer", cascade="all, delete-orphan")

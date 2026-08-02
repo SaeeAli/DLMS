@@ -16,9 +16,12 @@ from PySide6.QtWidgets import (
 )
 
 from database.session import SessionLocal
+from repositories.customer_repository import CustomerRepository
 from repositories.device_repository import DeviceRepository
+from services.customer_service import CustomerService
 from services.device_service import DeviceService
 from ui.navigation_manager import NavigationManager
+from ui.pages.customer_list_page import CustomerListPage
 from ui.pages.dashboard_page import DashboardPage
 from ui.pages.device_list_page import DeviceListPage
 from ui.pages.placeholder_page import PlaceholderPage
@@ -43,10 +46,11 @@ class MainWindow(QMainWindow):
 
         session = SessionLocal()
         device_service = DeviceService(DeviceRepository(session))
+        customer_service = CustomerService(CustomerRepository(session))
         self.navigation_manager.register(DeviceListPage(device_service))
+        self.navigation_manager.register(CustomerListPage(customer_service))
 
         placeholder_pages = {
-            "customers": PlaceholderPage("customers", "Customer Management"),
             "suppliers": PlaceholderPage("suppliers", "Supplier Management"),
             "sites": PlaceholderPage("sites", "Site Management"),
             "calibrations": PlaceholderPage("calibrations", "Calibration Management"),

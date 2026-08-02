@@ -10,7 +10,7 @@ from models.mixins import TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class Calibration(Base, TimestampMixin, UUIDPrimaryKeyMixin):
-    """Represents a calibration event for a device."""
+    """Legacy calibration model retained for compatibility."""
 
     __tablename__ = "calibrations"
 
@@ -20,5 +20,7 @@ class Calibration(Base, TimestampMixin, UUIDPrimaryKeyMixin):
 
     device_id: Mapped[str] = mapped_column(ForeignKey("devices.id"), nullable=False, index=True)
 
-    device: Mapped["Device"] = relationship(back_populates="calibrations")
-    certificate: Mapped["Certificate | None"] = relationship(back_populates="calibration", cascade="all, delete-orphan")
+    device: Mapped["Device"] = relationship()
+    certificate: Mapped["Certificate | None"] = relationship(
+        foreign_keys="[Certificate.calibration_id]",
+    )
