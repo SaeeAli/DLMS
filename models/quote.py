@@ -14,10 +14,11 @@ class Quote(Base, TimestampMixin, UUIDPrimaryKeyMixin):
 
     __tablename__ = "quotes"
 
-    quote_number: Mapped[str | None] = mapped_column(String(100), nullable=True, unique=True, index=True)
+    quote_number: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
     quote_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="Draft", index=True)
     approval_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    notes: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 
     site_id: Mapped[str] = mapped_column(ForeignKey("sites.id"), nullable=False, index=True)
 

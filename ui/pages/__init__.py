@@ -4,6 +4,7 @@ from ui.pages.customer_list_page import CustomerListPage
 from ui.pages.dashboard_page import DashboardPage
 from ui.pages.device_list_page import DeviceListPage
 from ui.pages.placeholder_page import PlaceholderPage
+from ui.pages.quote_list_page import QuoteListPage
 from ui.pages.study_list_page import StudyListPage
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
 	"DashboardPage",
 	"DeviceListPage",
 	"PlaceholderPage",
+	"QuoteListPage",
 	"StudyListPage",
 ]

@@ -19,12 +19,14 @@ from database.session import SessionLocal
 from repositories.country_repository import CountryRepository
 from repositories.customer_repository import CustomerRepository
 from repositories.device_repository import DeviceRepository
+from repositories.quote_repository import QuoteRepository
 from repositories.site_repository import SiteRepository
 from repositories.study_country_repository import StudyCountryRepository
 from repositories.study_repository import StudyRepository
 from services.country_service import CountryService
 from services.customer_service import CustomerService
 from services.device_service import DeviceService
+from services.quote_service import QuoteService
 from services.study_service import StudyService
 from ui.navigation_manager import NavigationManager
 from ui.pages.country_list_page import CountryListPage
@@ -32,6 +34,7 @@ from ui.pages.customer_list_page import CustomerListPage
 from ui.pages.dashboard_page import DashboardPage
 from ui.pages.device_list_page import DeviceListPage
 from ui.pages.placeholder_page import PlaceholderPage
+from ui.pages.quote_list_page import QuoteListPage
 from ui.pages.study_list_page import StudyListPage
 
 
@@ -59,10 +62,19 @@ class MainWindow(QMainWindow):
         customer_service = CustomerService(CustomerRepository(session))
         study_service = StudyService(StudyRepository(session), CustomerRepository(session))
         country_service = CountryService(study_country_repository, CountryRepository(session), StudyRepository(session), SiteRepository(session))
+        quote_service = QuoteService(
+            QuoteRepository(session),
+            CustomerRepository(session),
+            StudyRepository(session),
+            StudyCountryRepository(session),
+            SiteRepository(session),
+            CountryRepository(session),
+        )
         self.navigation_manager.register(DeviceListPage(device_service))
         self.navigation_manager.register(CustomerListPage(customer_service))
         self.navigation_manager.register(StudyListPage(study_service))
         self.navigation_manager.register(CountryListPage(country_service))
+        self.navigation_manager.register(QuoteListPage(quote_service))
 
         placeholder_pages = {
             "suppliers": PlaceholderPage("suppliers", "Supplier Management"),
@@ -116,6 +128,10 @@ class MainWindow(QMainWindow):
         countries_button.clicked.connect(lambda: self._navigate_to_page("countries"))
         toolbar.addWidget(countries_button)
 
+        quotes_button = QPushButton("Quote Management", self)
+        quotes_button.clicked.connect(lambda: self._navigate_to_page("quotes"))
+        toolbar.addWidget(quotes_button)
+
     def _create_status_bar(self) -> None:
         status_bar = QStatusBar(self)
         self.setStatusBar(status_bar)
@@ -148,6 +164,7 @@ class MainWindow(QMainWindow):
             ("customers", "Customer Management"),
             ("studies", "Study Management"),
             ("countries", "Country Management"),
+            ("quotes", "Quote Management"),
             ("suppliers", "Supplier Management"),
             ("calibrations", "Calibration Management"),
             ("certificates", "Certificate Management"),

@@ -33,7 +33,7 @@ def test_models_create_and_link_relationships() -> None:
         supplier = Supplier(name="Precision Instruments", supplier_code="PI-001", contact_email="support@example.com")
         device = Device(brand="Fluke", device_type="Multimeter", model="Model X", serial_number="SN-001", asset_number="AST-001")
 
-        quote = Quote(site=site, status="Draft")
+        quote = Quote(quote_number="Q-001", site=site, status="Draft")
         quote_item = QuoteItem(quote=quote, device=device, quantity=2, unit_cost=75.0, unit_price=125.0)
         device_exchange = DeviceExchange(exchange_reference="EX-100", condition="Good")
         calibration_job = CalibrationJob(

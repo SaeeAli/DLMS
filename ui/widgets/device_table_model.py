@@ -28,20 +28,20 @@ class DeviceTableModel(QAbstractTableModel):
         device = self._filtered_devices()[index.row()]
         if role == Qt.ItemDataRole.DisplayRole:
             if index.column() == 0:
-                return device.asset_tag
+                return device.brand or ""
             if index.column() == 1:
-                return device.serial_number or ""
+                return device.device_type or ""
             if index.column() == 2:
                 return device.model or ""
             if index.column() == 3:
-                return device.created_at.strftime("%Y-%m-%d") if device.created_at else ""
+                return device.serial_number or ""
         return None
 
     def headerData(self, section: int, orientation: int, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if role != Qt.ItemDataRole.DisplayRole:
             return None
         if orientation == Qt.Orientation.Horizontal:
-            headers = ["Device Name", "Serial Number", "Model", "Created"]
+            headers = ["Brand", "Type of Device", "Model", "Serial Number"]
             return headers[section]
         return None
 
@@ -70,6 +70,7 @@ class DeviceTableModel(QAbstractTableModel):
             device
             for device in self._devices
             if query in (device.serial_number or "").lower()
-            or query in (device.asset_tag or "").lower()
+            or query in (device.brand or device.asset_tag or "").lower()
+            or query in (device.device_type or "").lower()
             or query in (device.model or "").lower()
         ]

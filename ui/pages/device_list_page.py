@@ -73,7 +73,7 @@ class DeviceListPage(BasePage):
 
         search_label = QLabel("Search:")
         self.search_input = QLineEdit(self)
-        self.search_input.setPlaceholderText("Serial Number, Device Name, Model")
+        self.search_input.setPlaceholderText("Brand, Type of Device, Model, Serial Number")
         self.search_input.textChanged.connect(self._apply_search)
         search_layout.addWidget(search_label)
         search_layout.addWidget(self.search_input, 1)
@@ -101,11 +101,12 @@ class DeviceListPage(BasePage):
         self._clear_selection()
 
     def add_device(self) -> None:
-        dialog = DeviceFormDialog(self)
+        dialog = DeviceFormDialog(self, device_type_options=self.service.get_device_type_options())
         if dialog.exec() == DeviceFormDialog.Accepted:
             try:
                 self.service.create_device(
-                    asset_tag=dialog.asset_tag_input.text().strip(),
+                    brand=dialog.brand_input.text().strip(),
+                    device_type=dialog.device_type_combo.currentText().strip(),
                     model=dialog.model_input.text().strip() or None,
                     serial_number=dialog.serial_number_input.text().strip() or None,
                 )
@@ -123,13 +124,14 @@ class DeviceListPage(BasePage):
             QMessageBox.warning(self, "Not Found", "The selected device could not be found.")
             return
 
-        dialog = DeviceFormDialog(self)
+        dialog = DeviceFormDialog(self, device_type_options=self.service.get_device_type_options())
         dialog.set_device(device)
         if dialog.exec() == DeviceFormDialog.Accepted:
             try:
                 self.service.update_device(
                     device,
-                    asset_tag=dialog.asset_tag_input.text().strip(),
+                    brand=dialog.brand_input.text().strip(),
+                    device_type=dialog.device_type_combo.currentText().strip(),
                     model=dialog.model_input.text().strip() or None,
                     serial_number=dialog.serial_number_input.text().strip() or None,
                 )
@@ -150,7 +152,7 @@ class DeviceListPage(BasePage):
         confirmation = QMessageBox.question(
             self,
             "Confirm Delete",
-            f"Delete device {device.asset_tag}?",
+            f"Delete device {device.brand or device.asset_tag}?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if confirmation == QMessageBox.StandardButton.Yes:
