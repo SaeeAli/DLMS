@@ -19,7 +19,6 @@ class StudyService(BaseService[Study]):
         *,
         customer: Customer,
         study_number: str,
-        study_name: str | None = None,
         status: str = "Active",
         notes: str | None = None,
     ) -> Study:
@@ -29,7 +28,6 @@ class StudyService(BaseService[Study]):
         study = Study(
             customer=customer,
             study_number=study_number.strip(),
-            study_name=study_name.strip() if study_name else None,
             status=status.strip() if status else "Active",
             notes=notes.strip() if notes else None,
         )
@@ -41,7 +39,6 @@ class StudyService(BaseService[Study]):
         *,
         customer: Customer,
         study_number: str,
-        study_name: str | None = None,
         status: str = "Active",
         notes: str | None = None,
     ) -> Study:
@@ -53,7 +50,6 @@ class StudyService(BaseService[Study]):
 
         study.customer = customer
         study.study_number = study_number.strip()
-        study.study_name = study_name.strip() if study_name else None
         study.status = status.strip() if status else "Active"
         study.notes = notes.strip() if notes else None
         return self.update(study)
@@ -74,7 +70,6 @@ class StudyService(BaseService[Study]):
             for study in self.get_all()
             if normalized in (study.customer.name or "").lower()
             or normalized in (study.study_number or "").lower()
-            or normalized in (study.study_name or "").lower()
             or normalized in (study.status or "").lower()
         ]
 

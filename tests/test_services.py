@@ -16,10 +16,7 @@ def test_customer_service_validates_required_fields() -> None:
         service = CustomerService(CustomerRepository(session))
 
         with pytest.raises(ValueError, match="name is required"):
-            service.create_customer(name="   ", customer_code="ACM-001")
-
-        with pytest.raises(ValueError, match="customer_code is required"):
-            service.create_customer(name="Acme", customer_code="   ")
+            service.create_customer(name="   ")
 
 
 def test_customer_service_creates_customer() -> None:
@@ -28,8 +25,7 @@ def test_customer_service_creates_customer() -> None:
 
     with Session(engine) as session:
         service = CustomerService(CustomerRepository(session))
-        customer = service.create_customer(name="Acme", customer_code="ACM-001")
+        customer = service.create_customer(name="Acme")
 
         assert isinstance(customer, Customer)
         assert customer.name == "Acme"
-        assert customer.customer_code == "ACM-001"

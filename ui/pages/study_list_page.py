@@ -72,7 +72,7 @@ class StudyListPage(BasePage):
 
         search_label = QLabel("Search:")
         self.search_input = QLineEdit(self)
-        self.search_input.setPlaceholderText("Customer, Study Number, Study Name, Status")
+        self.search_input.setPlaceholderText("Customer, Study Number, Status")
         self.search_input.textChanged.connect(self._apply_search)
         search_layout.addWidget(search_label)
         search_layout.addWidget(self.search_input, 1)
@@ -113,7 +113,6 @@ class StudyListPage(BasePage):
                 self.service.create_study(
                     customer=self.service.customer_repository.get_by_id(dialog.selected_customer_id() or ""),
                     study_number=dialog.study_number_input.text().strip(),
-                    study_name=dialog.study_name_input.text().strip() or None,
                     status=dialog.status_combo.currentText(),
                     notes=dialog.notes_input.toPlainText().strip() or None,
                 )
@@ -142,7 +141,6 @@ class StudyListPage(BasePage):
                     study,
                     customer=customer,
                     study_number=dialog.study_number_input.text().strip(),
-                    study_name=dialog.study_name_input.text().strip() or None,
                     status=dialog.status_combo.currentText(),
                     notes=dialog.notes_input.toPlainText().strip() or None,
                 )

@@ -19,7 +19,7 @@ class CustomerTableModel(QAbstractTableModel):
         return len(self._filtered_customers())
 
     def columnCount(self, parent: QModelIndex | None = None) -> int:
-        return 4
+        return 3
 
     def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if not index.isValid():
@@ -30,10 +30,8 @@ class CustomerTableModel(QAbstractTableModel):
             if index.column() == 0:
                 return customer.name
             if index.column() == 1:
-                return customer.customer_code
-            if index.column() == 2:
                 return customer.contact_email or ""
-            if index.column() == 3:
+            if index.column() == 2:
                 return customer.created_at.strftime("%Y-%m-%d") if customer.created_at else ""
         return None
 
@@ -41,7 +39,7 @@ class CustomerTableModel(QAbstractTableModel):
         if role != Qt.ItemDataRole.DisplayRole:
             return None
         if orientation == Qt.Orientation.Horizontal:
-            headers = ["Name", "Customer Code", "Contact Email", "Created"]
+            headers = ["Customer Name", "Contact Email", "Created"]
             return headers[section]
         return None
 
@@ -70,6 +68,5 @@ class CustomerTableModel(QAbstractTableModel):
             customer
             for customer in self._customers
             if query in customer.name.lower()
-            or query in customer.customer_code.lower()
             or query in (customer.contact_email or "").lower()
         ]

@@ -72,7 +72,7 @@ class CustomerListPage(BasePage):
 
         search_label = QLabel("Search:")
         self.search_input = QLineEdit(self)
-        self.search_input.setPlaceholderText("Customer Name, Code, Email")
+        self.search_input.setPlaceholderText("Customer Name, Email")
         self.search_input.textChanged.connect(self._apply_search)
         search_layout.addWidget(search_label)
         search_layout.addWidget(self.search_input, 1)
@@ -112,7 +112,6 @@ class CustomerListPage(BasePage):
             try:
                 self.service.create_customer(
                     name=dialog.name_input.text().strip(),
-                    customer_code=dialog.customer_code_input.text().strip(),
                     contact_email=dialog.contact_email_input.text().strip() or None,
                 )
                 self.refresh_customers()
@@ -136,7 +135,6 @@ class CustomerListPage(BasePage):
                 self.service.update_customer(
                     customer,
                     name=dialog.name_input.text().strip(),
-                    customer_code=dialog.customer_code_input.text().strip(),
                     contact_email=dialog.contact_email_input.text().strip() or None,
                 )
                 self.refresh_customers()

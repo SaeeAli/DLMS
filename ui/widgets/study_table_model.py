@@ -19,7 +19,7 @@ class StudyTableModel(QAbstractTableModel):
         return len(self._filtered_studies())
 
     def columnCount(self, parent: QModelIndex | None = None) -> int:
-        return 5
+        return 4
 
     def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if not index.isValid():
@@ -32,10 +32,8 @@ class StudyTableModel(QAbstractTableModel):
             if index.column() == 1:
                 return study.study_number or ""
             if index.column() == 2:
-                return study.study_name or ""
-            if index.column() == 3:
                 return study.status or ""
-            if index.column() == 4:
+            if index.column() == 3:
                 return study.created_at.strftime("%Y-%m-%d") if study.created_at else ""
         return None
 
@@ -43,7 +41,7 @@ class StudyTableModel(QAbstractTableModel):
         if role != Qt.ItemDataRole.DisplayRole:
             return None
         if orientation == Qt.Orientation.Horizontal:
-            headers = ["Customer Name", "Study Number", "Study Name", "Status", "Created Date"]
+            headers = ["Customer Name", "Study Number", "Status", "Created Date"]
             return headers[section]
         return None
 
@@ -73,6 +71,5 @@ class StudyTableModel(QAbstractTableModel):
             for study in self._studies
             if query in (study.customer.name or "").lower()
             or query in (study.study_number or "").lower()
-            or query in (study.study_name or "").lower()
             or query in (study.status or "").lower()
         ]

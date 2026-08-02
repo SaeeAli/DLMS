@@ -24,8 +24,8 @@ def test_models_create_and_link_relationships() -> None:
     Base.metadata.create_all(engine)
 
     with Session(engine) as session:
-        customer = Customer(name="Acme Corp", customer_code="ACM-001", contact_email="sales@example.com")
-        study = Study(name="Primary Study", study_code="ST-001", customer=customer)
+        customer = Customer(name="Acme Corp", contact_email="sales@example.com")
+        study = Study(study_number="ST-001", customer=customer)
         country = Country(name="United Kingdom", country_code="GB")
         study.countries.append(country)
         site = Site(name="North Site", site_code="NS-001", customer=customer, country=country)
@@ -53,7 +53,7 @@ def test_models_create_and_link_relationships() -> None:
 
         session.refresh(customer)
         session.refresh(quote)
-        assert customer.studies[0].study_code == "ST-001"
+        assert customer.studies[0].study_number == "ST-001"
         assert study.countries[0].country_code == "GB"
         assert country.sites[0].site_code == "NS-001"
         assert quote.quote_items[0].device is device

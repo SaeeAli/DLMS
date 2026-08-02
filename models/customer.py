@@ -16,7 +16,6 @@ class Customer(Base, TimestampMixin, UUIDPrimaryKeyMixin):
     )
 
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    customer_code: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
     contact_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     contact_email: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     phone: Mapped[str | None] = mapped_column(String(50), nullable=True)

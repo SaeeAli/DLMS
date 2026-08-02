@@ -13,7 +13,7 @@ def test_base_repository_crud_operations() -> None:
     with Session(engine) as session:
         repository = BaseRepository[Customer](session, Customer)
 
-        customer = Customer(name="Acme", customer_code="ACM-001", contact_email="ops@example.com")
+        customer = Customer(name="Acme", contact_email="ops@example.com")
         created = repository.create(customer)
         assert created.id is not None
         assert repository.exists(created.id)

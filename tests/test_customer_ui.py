@@ -21,7 +21,7 @@ def test_customer_list_page_loads_and_filters_customers() -> None:
         service = CustomerService(CustomerRepository(session))
         page = CustomerListPage(service)
 
-        service.create_customer(name="Acme", customer_code="ACM-001", contact_email="ops@example.com")
+        service.create_customer(name="Acme", contact_email="ops@example.com")
         page.refresh_customers()
 
         assert page.table_model.rowCount() == 1
@@ -40,8 +40,8 @@ def test_customer_page_selects_and_deletes_the_selected_customer(monkeypatch) ->
         service = CustomerService(CustomerRepository(session))
         page = CustomerListPage(service)
 
-        first = service.create_customer(name="Alpha", customer_code="ALP-001")
-        second = service.create_customer(name="Beta", customer_code="BET-001")
+        first = service.create_customer(name="Alpha")
+        second = service.create_customer(name="Beta")
         page.refresh_customers()
 
         page.table_view.selectRow(1)

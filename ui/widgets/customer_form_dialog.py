@@ -22,13 +22,11 @@ class CustomerFormDialog(QDialog):
         self.resize(420, 220)
 
         self.name_input = QLineEdit(self)
-        self.customer_code_input = QLineEdit(self)
         self.contact_email_input = QLineEdit(self)
 
         layout = QVBoxLayout(self)
         form_layout = QFormLayout()
-        form_layout.addRow("Name", self.name_input)
-        form_layout.addRow("Customer Code", self.customer_code_input)
+        form_layout.addRow("Customer Name", self.name_input)
         form_layout.addRow("Contact Email", self.contact_email_input)
         layout.addLayout(form_layout)
 
@@ -44,5 +42,4 @@ class CustomerFormDialog(QDialog):
 
     def set_customer(self, customer: Customer) -> None:
         self.name_input.setText(customer.name or "")
-        self.customer_code_input.setText(customer.customer_code or "")
         self.contact_email_input.setText(customer.contact_email or "")

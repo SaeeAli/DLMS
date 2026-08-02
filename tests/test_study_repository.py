@@ -16,13 +16,13 @@ def test_study_repository_persists_and_groups_by_customer() -> None:
         customer_repository = CustomerRepository(session)
         study_repository = StudyRepository(session)
 
-        customer_one = Customer(name="Acme", customer_code="ACM-001")
-        customer_two = Customer(name="Beta", customer_code="BET-001")
+        customer_one = Customer(name="Acme")
+        customer_two = Customer(name="Beta")
         customer_repository.create(customer_one)
         customer_repository.create(customer_two)
 
-        study_one = Study(study_number="ST-100", study_name="Pilot", customer=customer_one, status="Active")
-        study_two = Study(study_number="ST-100", study_name="Follow-up", customer=customer_two, status="Completed")
+        study_one = Study(study_number="ST-100", customer=customer_one, status="Active")
+        study_two = Study(study_number="ST-100", customer=customer_two, status="Completed")
         study_repository.create(study_one)
         study_repository.create(study_two)
 

@@ -24,15 +24,15 @@ def test_study_list_page_loads_and_filters_studies() -> None:
         study_repository = StudyRepository(session)
         service = StudyService(study_repository, customer_repository)
 
-        customer = Customer(name="Acme", customer_code="ACM-001")
+        customer = Customer(name="Acme")
         customer_repository.create(customer)
-        service.create_study(customer=customer, study_number="ST-100", study_name="Pilot", status="Active")
+        service.create_study(customer=customer, study_number="ST-100", status="Active")
 
         page = StudyListPage(service)
         page.refresh_studies()
 
         assert page.table_model.rowCount() == 1
-        page.search_input.setText("pilot")
+        page.search_input.setText("st-100")
         assert page.table_model.rowCount() == 1
         page.search_input.setText("missing")
         assert page.table_model.rowCount() == 0

@@ -14,7 +14,6 @@ class Study(Base, TimestampMixin, UUIDPrimaryKeyMixin):
     __tablename__ = "studies"
 
     study_number: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
-    study_name: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="Active", index=True)
     notes: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 

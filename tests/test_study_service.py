@@ -19,13 +19,13 @@ def test_study_service_prevents_duplicate_study_number_per_customer() -> None:
         study_repository = StudyRepository(session)
         service = StudyService(study_repository, customer_repository)
 
-        customer = Customer(name="Acme", customer_code="ACM-001")
+        customer = Customer(name="Acme")
         customer_repository.create(customer)
 
-        service.create_study(customer=customer, study_number="ST-100", study_name="Pilot", status="Active")
+        service.create_study(customer=customer, study_number="ST-100", status="Active")
 
         with pytest.raises(ValueError, match="already exists"):
-            service.create_study(customer=customer, study_number="ST-100", study_name="Second", status="Active")
+            service.create_study(customer=customer, study_number="ST-100", status="Active")
 
 
 def test_study_service_allows_same_study_number_for_different_customers() -> None:
@@ -37,13 +37,13 @@ def test_study_service_allows_same_study_number_for_different_customers() -> Non
         study_repository = StudyRepository(session)
         service = StudyService(study_repository, customer_repository)
 
-        customer_one = Customer(name="Acme", customer_code="ACM-001")
-        customer_two = Customer(name="Beta", customer_code="BET-001")
+        customer_one = Customer(name="Acme")
+        customer_two = Customer(name="Beta")
         customer_repository.create(customer_one)
         customer_repository.create(customer_two)
 
-        first = service.create_study(customer=customer_one, study_number="ST-100", study_name="Pilot", status="Active")
-        second = service.create_study(customer=customer_two, study_number="ST-100", study_name="Follow-up", status="Completed")
+        first = service.create_study(customer=customer_one, study_number="ST-100", status="Active")
+        second = service.create_study(customer=customer_two, study_number="ST-100", status="Completed")
 
         assert first.customer_id == customer_one.id
         assert second.customer_id == customer_two.id
