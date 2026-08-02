@@ -13,9 +13,10 @@ class Study(Base, TimestampMixin, UUIDPrimaryKeyMixin):
 
     __tablename__ = "studies"
 
-    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    study_code: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
-    description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    study_number: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    study_name: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="Active", index=True)
+    notes: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 
     customer_id: Mapped[str] = mapped_column(ForeignKey("customers.id"), nullable=False, index=True)
 

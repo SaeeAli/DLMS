@@ -6,6 +6,9 @@ from typing import Iterator
 from sqlalchemy.orm import Session, sessionmaker
 
 from database.engine import get_engine
+from database.initialization import initialize_database
+
+initialize_database()
 
 SessionLocal = sessionmaker(
     bind=get_engine(),

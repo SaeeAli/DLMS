@@ -18,13 +18,16 @@ from PySide6.QtWidgets import (
 from database.session import SessionLocal
 from repositories.customer_repository import CustomerRepository
 from repositories.device_repository import DeviceRepository
+from repositories.study_repository import StudyRepository
 from services.customer_service import CustomerService
 from services.device_service import DeviceService
+from services.study_service import StudyService
 from ui.navigation_manager import NavigationManager
 from ui.pages.customer_list_page import CustomerListPage
 from ui.pages.dashboard_page import DashboardPage
 from ui.pages.device_list_page import DeviceListPage
 from ui.pages.placeholder_page import PlaceholderPage
+from ui.pages.study_list_page import StudyListPage
 
 
 class MainWindow(QMainWindow):
@@ -36,19 +39,22 @@ class MainWindow(QMainWindow):
         self.resize(1200, 760)
         self.setMinimumSize(900, 600)
 
+        self._navigation_page_names = []
         self._create_menu_bar()
         self._create_tool_bar()
         self._create_status_bar()
         self._create_central_layout()
 
-        self.navigation_manager = NavigationManager(self._stacked_pages)
+        self.navigation_manager = NavigationManager(self._stacked_pages, self._update_navigation_button_state)
         self.navigation_manager.register(DashboardPage())
 
         session = SessionLocal()
         device_service = DeviceService(DeviceRepository(session))
         customer_service = CustomerService(CustomerRepository(session))
+        study_service = StudyService(StudyRepository(session), CustomerRepository(session))
         self.navigation_manager.register(DeviceListPage(device_service))
         self.navigation_manager.register(CustomerListPage(customer_service))
+        self.navigation_manager.register(StudyListPage(study_service))
 
         placeholder_pages = {
             "suppliers": PlaceholderPage("suppliers", "Supplier Management"),
@@ -62,6 +68,7 @@ class MainWindow(QMainWindow):
             self.navigation_manager.register(page)
 
         self.navigation_manager.navigate("dashboard")
+        self._update_navigation_button_state("dashboard")
 
     def _create_menu_bar(self) -> None:
         menu_bar = self.menuBar()
@@ -74,11 +81,11 @@ class MainWindow(QMainWindow):
 
         view_menu = menu_bar.addMenu("View")
         dashboard_action = QAction("Dashboard", self)
-        dashboard_action.triggered.connect(lambda: self.navigation_manager.navigate("dashboard"))
+        dashboard_action.triggered.connect(lambda: self._navigate_to_page("dashboard"))
         view_menu.addAction(dashboard_action)
 
         devices_action = QAction("Device Management", self)
-        devices_action.triggered.connect(lambda: self.navigation_manager.navigate("devices"))
+        devices_action.triggered.connect(lambda: self._navigate_to_page("devices"))
         view_menu.addAction(devices_action)
 
     def _create_tool_bar(self) -> None:
@@ -87,12 +94,16 @@ class MainWindow(QMainWindow):
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, toolbar)
 
         dashboard_button = QPushButton("Dashboard", self)
-        dashboard_button.clicked.connect(lambda: self.navigation_manager.navigate("dashboard"))
+        dashboard_button.clicked.connect(lambda: self._navigate_to_page("dashboard"))
         toolbar.addWidget(dashboard_button)
 
         devices_button = QPushButton("Device Management", self)
-        devices_button.clicked.connect(lambda: self.navigation_manager.navigate("devices"))
+        devices_button.clicked.connect(lambda: self._navigate_to_page("devices"))
         toolbar.addWidget(devices_button)
+
+        studies_button = QPushButton("Study Management", self)
+        studies_button.clicked.connect(lambda: self._navigate_to_page("studies"))
+        toolbar.addWidget(studies_button)
 
     def _create_status_bar(self) -> None:
         status_bar = QStatusBar(self)
@@ -124,6 +135,7 @@ class MainWindow(QMainWindow):
             ("dashboard", "Dashboard"),
             ("devices", "Device Management"),
             ("customers", "Customer Management"),
+            ("studies", "Study Management"),
             ("suppliers", "Supplier Management"),
             ("sites", "Site Management"),
             ("calibrations", "Calibration Management"),
@@ -133,9 +145,16 @@ class MainWindow(QMainWindow):
         ]:
             button = QPushButton(label, self)
             button.setCheckable(True)
-            button.clicked.connect(lambda checked=False, name=page_name: self.navigation_manager.navigate(name))
+            button.setChecked(False)
+            button.setStyleSheet(
+                "QPushButton { text-align: left; padding: 8px 10px; border: 1px solid #d7dce5; border-radius: 6px; background-color: #f8f9fc; color: #374151; }"
+                "QPushButton:hover { background-color: #eef2ff; }"
+                "QPushButton:checked { background-color: #ef4444; color: white; border-color: #ef4444; }"
+            )
+            button.clicked.connect(lambda checked=False, name=page_name: self._navigate_to_page(name))
             nav_layout.addWidget(button)
             self.navigation_buttons[page_name] = button
+            self._navigation_page_names.append(page_name)
 
         nav_layout.addStretch(1)
 
@@ -146,3 +165,11 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._stacked_pages)
 
         self.setCentralWidget(container)
+
+    def _navigate_to_page(self, page_name: str) -> None:
+        self.navigation_manager.navigate(page_name)
+        self._update_navigation_button_state(page_name)
+
+    def _update_navigation_button_state(self, active_page_name: str) -> None:
+        for page_name, button in self.navigation_buttons.items():
+            button.setChecked(page_name == active_page_name)

@@ -6,6 +6,7 @@ from repositories.certificate_repository import CertificateRepository
 from repositories.customer_repository import CustomerRepository
 from repositories.device_repository import DeviceRepository
 from repositories.site_repository import SiteRepository
+from repositories.study_repository import StudyRepository
 from repositories.supplier_repository import SupplierRepository
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "CustomerRepository",
     "DeviceRepository",
     "SiteRepository",
+    "StudyRepository",
     "SupplierRepository",
 ]

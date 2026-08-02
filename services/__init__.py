@@ -6,6 +6,7 @@ from services.certificate_service import CertificateService
 from services.customer_service import CustomerService
 from services.device_service import DeviceService
 from services.site_service import SiteService
+from services.study_service import StudyService
 from services.supplier_service import SupplierService
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "CustomerService",
     "DeviceService",
     "SiteService",
+    "StudyService",
     "SupplierService",
 ]

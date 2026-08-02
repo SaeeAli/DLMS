@@ -8,9 +8,10 @@ from ui.pages.base_page import BasePage
 class NavigationManager:
     """Manages stacked page navigation for the application."""
 
-    def __init__(self, stacked_widget: QStackedWidget) -> None:
+    def __init__(self, stacked_widget: QStackedWidget, on_navigate=None) -> None:
         self._stacked_widget = stacked_widget
         self._pages: dict[str, BasePage] = {}
+        self._on_navigate = on_navigate
 
     def register(self, page: BasePage) -> None:
         self._pages[page.page_name] = page
@@ -21,6 +22,8 @@ class NavigationManager:
             raise KeyError(f"Unknown page: {page_name}")
 
         self._stacked_widget.setCurrentWidget(self._pages[page_name])
+        if self._on_navigate is not None:
+            self._on_navigate(page_name)
         return self._pages[page_name]
 
     def current_page(self) -> BasePage | None:
