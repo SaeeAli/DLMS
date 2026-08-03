@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from PySide6.QtCore import QDate
+from PySide6.QtCore import QDate, Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QDateEdit,
@@ -10,6 +10,8 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QPushButton,
     QTextEdit,
     QVBoxLayout,
@@ -44,7 +46,8 @@ class QuoteFormDialog(QDialog):
 
         self.study_combo = QComboBox(self)
         self.country_combo = QComboBox(self)
-        self.site_combo = QComboBox(self)
+        self.site_list = QListWidget(self)
+        self.site_list.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
 
         self.quote_date_input = QDateEdit(self)
         self.quote_date_input.setCalendarPopup(True)
@@ -64,7 +67,7 @@ class QuoteFormDialog(QDialog):
         form_layout.addRow("Customer", self.customer_combo)
         form_layout.addRow("Study Number", self.study_combo)
         form_layout.addRow("Country", self.country_combo)
-        form_layout.addRow("Site Number", self.site_combo)
+        form_layout.addRow("Sites", self.site_list)
         form_layout.addRow("Quote Date", self.quote_date_input)
         form_layout.addRow("Status", self.status_combo)
         form_layout.addRow("Notes", self.notes_input)
@@ -93,7 +96,8 @@ class QuoteFormDialog(QDialog):
             local_date = quote.quote_date.date()
             self.quote_date_input.setDate(QDate(local_date.year, local_date.month, local_date.day))
 
-        site = quote.site
+        first_quote_site = quote.quote_sites[0] if quote.quote_sites else None
+        site = first_quote_site.site if first_quote_site is not None else None
         assignment = site.study_country if site is not None else None
         study = assignment.study if assignment is not None else None
         country = assignment.country if assignment is not None else None
@@ -101,7 +105,11 @@ class QuoteFormDialog(QDialog):
         customer_id = study.customer_id if study is not None else None
         study_id = study.id if study is not None else None
         country_id = country.id if country is not None else None
-        site_id = site.id if site is not None else None
+        selected_site_ids = {
+            quote_site.site_id
+            for quote_site in quote.quote_sites
+            if quote_site.site_id is not None
+        }
 
         customer_index = self.customer_combo.findData(customer_id)
         if customer_index >= 0:
@@ -115,9 +123,7 @@ class QuoteFormDialog(QDialog):
         if country_index >= 0:
             self.country_combo.setCurrentIndex(country_index)
 
-        site_index = self.site_combo.findData(site_id)
-        if site_index >= 0:
-            self.site_combo.setCurrentIndex(site_index)
+        self._select_sites(selected_site_ids)
 
     def selected_customer_id(self) -> str | None:
         value = self.customer_combo.currentData()
@@ -131,9 +137,13 @@ class QuoteFormDialog(QDialog):
         value = self.country_combo.currentData()
         return value if value else None
 
-    def selected_site_id(self) -> str | None:
-        value = self.site_combo.currentData()
-        return value if value else None
+    def selected_site_ids(self) -> list[str]:
+        selected_ids: list[str] = []
+        for item in self.site_list.selectedItems():
+            site_id = item.data(Qt.ItemDataRole.UserRole)
+            if site_id:
+                selected_ids.append(site_id)
+        return selected_ids
 
     def selected_quote_date(self) -> datetime:
         d = self.quote_date_input.date()
@@ -182,8 +192,7 @@ class QuoteFormDialog(QDialog):
         self.country_combo.blockSignals(False)
 
     def _populate_sites(self, study_id: str | None, country_id: str | None) -> None:
-        self.site_combo.clear()
-        self.site_combo.addItem("", "")
+        self.site_list.clear()
         if not study_id or not country_id:
             return
         for site in self._all_sites:
@@ -194,4 +203,13 @@ class QuoteFormDialog(QDialog):
                 continue
             if country_id and assignment.country_id != country_id:
                 continue
-            self.site_combo.addItem(site.site_number or "", site.id)
+            item = QListWidgetItem(site.site_number or "")
+            item.setData(Qt.ItemDataRole.UserRole, site.id)
+            self.site_list.addItem(item)
+
+    def _select_sites(self, site_ids: set[str]) -> None:
+        for i in range(self.site_list.count()):
+            item = self.site_list.item(i)
+            if item is None:
+                continue
+            item.setSelected(item.data(Qt.ItemDataRole.UserRole) in site_ids)

@@ -7,6 +7,7 @@ from repositories.country_repository import CountryRepository
 from repositories.customer_repository import CustomerRepository
 from repositories.device_repository import DeviceRepository
 from repositories.quote_repository import QuoteRepository
+from repositories.quote_site_repository import QuoteSiteRepository
 from repositories.site_repository import SiteRepository
 from repositories.study_repository import StudyRepository
 from repositories.study_country_repository import StudyCountryRepository
@@ -20,6 +21,7 @@ __all__ = [
     "CustomerRepository",
     "DeviceRepository",
     "QuoteRepository",
+    "QuoteSiteRepository",
     "SiteRepository",
     "StudyRepository",
     "StudyCountryRepository",

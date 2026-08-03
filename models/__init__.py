@@ -9,6 +9,7 @@ from models.device import Device
 from models.device_exchange import DeviceExchange
 from models.quote import Quote
 from models.quote_item import QuoteItem
+from models.quote_site import QuoteSite
 from models.site import Site
 from models.study import Study
 from models.supplier import Supplier
@@ -24,6 +25,7 @@ __all__ = [
     "DeviceExchange",
     "Quote",
     "QuoteItem",
+    "QuoteSite",
     "Site",
     "Study",
     "StudyCountry",

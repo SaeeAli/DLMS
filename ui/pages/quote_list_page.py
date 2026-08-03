@@ -72,7 +72,7 @@ class QuoteListPage(BasePage):
 
         search_label = QLabel("Search:")
         self.search_input = QLineEdit(self)
-        self.search_input.setPlaceholderText("Quote Number, Customer, Study Number, Country, Site Number, Status")
+        self.search_input.setPlaceholderText("Quote Number, Customer, Study Number, Country, Site")
         self.search_input.textChanged.connect(self._apply_search)
         search_layout.addWidget(search_label)
         search_layout.addWidget(self.search_input, 1)
@@ -116,10 +116,15 @@ class QuoteListPage(BasePage):
         )
         if dialog.exec() == QuoteFormDialog.Accepted:
             try:
-                site = self.service.site_repository.get_by_id(dialog.selected_site_id() or "")
+                sites = [
+                    site
+                    for site_id in dialog.selected_site_ids()
+                    for site in [self.service.site_repository.get_by_id(site_id)]
+                    if site is not None
+                ]
                 self.service.create_quote(
                     quote_number=dialog.quote_number_input.text().strip(),
-                    site=site,
+                    sites=sites,
                     quote_date=dialog.selected_quote_date(),
                     status=dialog.status_combo.currentText(),
                     notes=dialog.notes_input.toPlainText().strip() or None,
@@ -148,11 +153,16 @@ class QuoteListPage(BasePage):
         dialog.set_quote(quote)
         if dialog.exec() == QuoteFormDialog.Accepted:
             try:
-                site = self.service.site_repository.get_by_id(dialog.selected_site_id() or "")
+                sites = [
+                    site
+                    for site_id in dialog.selected_site_ids()
+                    for site in [self.service.site_repository.get_by_id(site_id)]
+                    if site is not None
+                ]
                 self.service.update_quote(
                     quote,
                     quote_number=dialog.quote_number_input.text().strip(),
-                    site=site,
+                    sites=sites,
                     quote_date=dialog.selected_quote_date(),
                     status=dialog.status_combo.currentText(),
                     notes=dialog.notes_input.toPlainText().strip() or None,

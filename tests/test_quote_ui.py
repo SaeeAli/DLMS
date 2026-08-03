@@ -11,6 +11,7 @@ from database.base import Base
 from models.country import Country
 from models.customer import Customer
 from models.quote import Quote
+from models.quote_site import QuoteSite
 from models.site import Site
 from models.study import Study
 from models.study_country import StudyCountry
@@ -49,13 +50,14 @@ def test_quote_list_page_loads_and_filters_quotes() -> None:
         country = Country(name="Germany")
         assignment = StudyCountry(study=study, country=country)
         site = Site(name="Berlin Site", site_number="S-001", study_country=assignment)
+        site_two = Site(name="Munich Site", site_number="S-002", study_country=assignment)
         quote = Quote(
             quote_number="Q-001",
-            site=site,
             quote_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
             status="Draft",
         )
-        session.add_all([customer, study, country, assignment, site, quote])
+        quote.quote_sites = [QuoteSite(site=site), QuoteSite(site=site_two)]
+        session.add_all([customer, study, country, assignment, site, site_two, quote])
         session.flush()
 
         page = QuoteListPage(service)
@@ -63,6 +65,8 @@ def test_quote_list_page_loads_and_filters_quotes() -> None:
 
         assert page.table_model.rowCount() == 1
         page.search_input.setText("q-001")
+        assert page.table_model.rowCount() == 1
+        page.search_input.setText("s-002")
         assert page.table_model.rowCount() == 1
         page.search_input.setText("missing")
         assert page.table_model.rowCount() == 0
@@ -124,8 +128,41 @@ def test_quote_form_dialog_filters_in_customer_study_country_site_order() -> Non
         country_index = dialog.country_combo.findData(country_one.id)
         dialog.country_combo.setCurrentIndex(country_index)
 
-        site_texts = [dialog.site_combo.itemText(i) for i in range(dialog.site_combo.count())]
+        site_texts = [dialog.site_list.item(i).text() for i in range(dialog.site_list.count())]
         assert "S-001" in site_texts
         assert "S-002" not in site_texts
+
+        selected_ids = dialog.selected_site_ids()
+        assert selected_ids == []
+
+    app.quit()
+
+
+def test_quote_form_dialog_set_quote_preselects_multiple_sites() -> None:
+    app = QApplication.instance() or QApplication([])
+    engine = create_engine("sqlite:///:memory:", future=True)
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        customer = Customer(name="Acme")
+        study = Study(study_number="ST-100", customer=customer)
+        country = Country(name="Germany")
+        assignment = StudyCountry(study=study, country=country)
+        site_one = Site(name="Berlin Site", site_number="S-001", study_country=assignment)
+        site_two = Site(name="Munich Site", site_number="S-002", study_country=assignment)
+        quote = Quote(
+            quote_number="Q-010",
+            quote_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            status="Draft",
+        )
+        quote.quote_sites = [QuoteSite(site=site_one), QuoteSite(site=site_two)]
+        session.add_all([customer, study, country, assignment, site_one, site_two, quote])
+        session.flush()
+
+        dialog = QuoteFormDialog([customer], [study], [country], [site_one, site_two])
+        dialog.set_quote(quote)
+
+        selected_ids = set(dialog.selected_site_ids())
+        assert selected_ids == {site_one.id, site_two.id}
 
     app.quit()

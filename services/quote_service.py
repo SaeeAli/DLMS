@@ -5,6 +5,7 @@ from datetime import datetime
 from models.country import Country
 from models.customer import Customer
 from models.quote import Quote
+from models.quote_site import QuoteSite
 from models.site import Site
 from models.study import Study
 from models.study_country import StudyCountry
@@ -42,14 +43,14 @@ class QuoteService(BaseService[Quote]):
         self,
         *,
         quote_number: str,
-        site: Site | None,
+        sites: list[Site],
         quote_date: datetime | None,
         status: str,
         notes: str | None = None,
     ) -> Quote:
         self._validate_quote_fields(
             quote_number=quote_number,
-            site=site,
+            sites=sites,
             quote_date=quote_date,
             status=status,
             existing_id=None,
@@ -57,11 +58,11 @@ class QuoteService(BaseService[Quote]):
 
         quote = Quote(
             quote_number=quote_number.strip(),
-            site=site,
             quote_date=quote_date,
             status=status.strip(),
             notes=notes.strip() if notes else None,
         )
+        quote.quote_sites = [QuoteSite(site=site) for site in sites]
         return self.create(quote)
 
     def update_quote(
@@ -69,7 +70,7 @@ class QuoteService(BaseService[Quote]):
         quote: Quote,
         *,
         quote_number: str,
-        site: Site | None,
+        sites: list[Site],
         quote_date: datetime | None,
         status: str,
         notes: str | None = None,
@@ -79,17 +80,17 @@ class QuoteService(BaseService[Quote]):
 
         self._validate_quote_fields(
             quote_number=quote_number,
-            site=site,
+            sites=sites,
             quote_date=quote_date,
             status=status,
             existing_id=quote.id,
         )
 
         quote.quote_number = quote_number.strip()
-        quote.site = site
         quote.quote_date = quote_date
         quote.status = status.strip()
         quote.notes = notes.strip() if notes else None
+        quote.quote_sites = [QuoteSite(site=site) for site in sites]
         return self.update(quote)
 
     def delete_quote(self, quote: Quote) -> None:
@@ -106,11 +107,10 @@ class QuoteService(BaseService[Quote]):
             quote
             for quote in self.get_all()
             if normalized in (quote.quote_number or "").lower()
-            or normalized in (quote.site.study_country.study.customer.name or "").lower()
-            or normalized in (quote.site.study_country.study.study_number or "").lower()
-            or normalized in (quote.site.study_country.country.name or "").lower()
-            or normalized in (quote.site.site_number or "").lower()
-            or normalized in (quote.status or "").lower()
+            or normalized in (self._customer_name(quote) or "").lower()
+            or normalized in (self._study_number(quote) or "").lower()
+            or normalized in (self._country_name(quote) or "").lower()
+            or any(normalized in (site_number or "").lower() for site_number in self._site_numbers(quote))
         ]
 
     def get_customer_options(self) -> list[Customer]:
@@ -152,19 +152,31 @@ class QuoteService(BaseService[Quote]):
         self,
         *,
         quote_number: str,
-        site: Site | None,
+        sites: list[Site],
         quote_date: datetime | None,
         status: str,
         existing_id: str | None,
     ) -> None:
         if not quote_number or not quote_number.strip():
             raise ValueError("quote_number is required")
-        if site is None:
-            raise ValueError("site is required")
+        if not sites:
+            raise ValueError("at least one site is required")
         if quote_date is None:
             raise ValueError("quote_date is required")
         if status.strip() not in self.ALLOWED_STATUSES:
             raise ValueError("status is invalid")
+
+        site_ids = [site.id for site in sites]
+        if any(site_id is None for site_id in site_ids):
+            raise ValueError("all selected sites must be persisted")
+        if len(set(site_ids)) != len(site_ids):
+            raise ValueError("selected sites must be unique")
+
+        study_country_ids = {site.study_country_id for site in sites}
+        if any(study_country_id is None for study_country_id in study_country_ids):
+            raise ValueError("all selected sites must be linked to a study country")
+        if len(study_country_ids) != 1:
+            raise ValueError("all selected sites must belong to the same study and country")
 
         normalized = quote_number.strip().lower()
         for existing in self.get_all():
@@ -172,3 +184,34 @@ class QuoteService(BaseService[Quote]):
                 continue
             if (existing.quote_number or "").strip().lower() == normalized:
                 raise ValueError("A quote with this quote number already exists")
+
+    def _primary_site(self, quote: Quote) -> Site | None:
+        if not quote.quote_sites:
+            return None
+        quote_site = quote.quote_sites[0]
+        return quote_site.site
+
+    def _customer_name(self, quote: Quote) -> str:
+        site = self._primary_site(quote)
+        if site is None or site.study_country is None or site.study_country.study is None or site.study_country.study.customer is None:
+            return ""
+        return site.study_country.study.customer.name or ""
+
+    def _study_number(self, quote: Quote) -> str:
+        site = self._primary_site(quote)
+        if site is None or site.study_country is None or site.study_country.study is None:
+            return ""
+        return site.study_country.study.study_number or ""
+
+    def _country_name(self, quote: Quote) -> str:
+        site = self._primary_site(quote)
+        if site is None or site.study_country is None or site.study_country.country is None:
+            return ""
+        return site.study_country.country.name or ""
+
+    def _site_numbers(self, quote: Quote) -> list[str]:
+        return [
+            quote_site.site.site_number
+            for quote_site in quote.quote_sites
+            if quote_site.site is not None and quote_site.site.site_number is not None
+        ]

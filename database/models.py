@@ -10,6 +10,7 @@ from models.device import Device  # noqa: F401
 from models.device_exchange import DeviceExchange  # noqa: F401
 from models.quote import Quote  # noqa: F401
 from models.quote_item import QuoteItem  # noqa: F401
+from models.quote_site import QuoteSite  # noqa: F401
 from models.site import Site  # noqa: F401
 from models.study import Study  # noqa: F401
 from models.supplier import Supplier  # noqa: F401
@@ -25,6 +26,7 @@ __all__ = [
     "DeviceExchange",
     "Quote",
     "QuoteItem",
+    "QuoteSite",
     "Site",
     "Study",
     "StudyCountry",

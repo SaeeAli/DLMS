@@ -26,10 +26,11 @@ class QuoteTableModel(QAbstractTableModel):
             return None
 
         quote = self._filtered_quotes()[index.row()]
-        site = quote.site
+        site = self._primary_site(quote)
         assignment = site.study_country if site is not None else None
         study = assignment.study if assignment is not None else None
         country = assignment.country if assignment is not None else None
+        site_numbers = ", ".join(self._site_numbers(quote))
 
         if role == Qt.ItemDataRole.DisplayRole:
             if index.column() == 0:
@@ -41,7 +42,7 @@ class QuoteTableModel(QAbstractTableModel):
             if index.column() == 3:
                 return country.name if country is not None else ""
             if index.column() == 4:
-                return site.site_number if site is not None else ""
+                return site_numbers
             if index.column() == 5:
                 return quote.quote_date.strftime("%Y-%m-%d") if quote.quote_date else ""
             if index.column() == 6:
@@ -52,7 +53,7 @@ class QuoteTableModel(QAbstractTableModel):
         if role != Qt.ItemDataRole.DisplayRole:
             return None
         if orientation == Qt.Orientation.Horizontal:
-            headers = ["Quote Number", "Customer", "Study", "Country", "Site", "Quote Date", "Status"]
+            headers = ["Quote Number", "Customer", "Study", "Country", "Sites", "Quote Date", "Status"]
             return headers[section]
         return None
 
@@ -81,9 +82,38 @@ class QuoteTableModel(QAbstractTableModel):
             quote
             for quote in self._quotes
             if query in (quote.quote_number or "").lower()
-            or query in (quote.site.study_country.study.customer.name or "").lower()
-            or query in (quote.site.study_country.study.study_number or "").lower()
-            or query in (quote.site.study_country.country.name or "").lower()
-            or query in (quote.site.site_number or "").lower()
-            or query in (quote.status or "").lower()
+            or query in (self._customer_name(quote) or "").lower()
+            or query in (self._study_number(quote) or "").lower()
+            or query in (self._country_name(quote) or "").lower()
+            or any(query in (site_number or "").lower() for site_number in self._site_numbers(quote))
         ]
+
+    def _primary_site(self, quote: Quote):
+        if not quote.quote_sites:
+            return None
+        return quote.quote_sites[0].site
+
+    def _site_numbers(self, quote: Quote) -> list[str]:
+        return [
+            quote_site.site.site_number
+            for quote_site in quote.quote_sites
+            if quote_site.site is not None and quote_site.site.site_number is not None
+        ]
+
+    def _customer_name(self, quote: Quote) -> str:
+        site = self._primary_site(quote)
+        if site is None or site.study_country is None or site.study_country.study is None or site.study_country.study.customer is None:
+            return ""
+        return site.study_country.study.customer.name or ""
+
+    def _study_number(self, quote: Quote) -> str:
+        site = self._primary_site(quote)
+        if site is None or site.study_country is None or site.study_country.study is None:
+            return ""
+        return site.study_country.study.study_number or ""
+
+    def _country_name(self, quote: Quote) -> str:
+        site = self._primary_site(quote)
+        if site is None or site.study_country is None or site.study_country.country is None:
+            return ""
+        return site.study_country.country.name or ""

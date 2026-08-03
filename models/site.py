@@ -25,7 +25,7 @@ class Site(Base, TimestampMixin, UUIDPrimaryKeyMixin):
     study_country_id: Mapped[str] = mapped_column(ForeignKey("study_countries.id"), nullable=False, index=True)
 
     study_country: Mapped["StudyCountry"] = relationship(back_populates="sites")
-    quotes: Mapped[list["Quote"]] = relationship(back_populates="site", cascade="all, delete-orphan")
+    quote_sites: Mapped[list["QuoteSite"]] = relationship(back_populates="site", cascade="all, delete-orphan")
 
     @property
     def site_code(self) -> str:

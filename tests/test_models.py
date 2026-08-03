@@ -13,6 +13,7 @@ from models import (
     DeviceExchange,
     Quote,
     QuoteItem,
+    QuoteSite,
     Site,
     Study,
     StudyCountry,
@@ -46,7 +47,8 @@ def test_models_create_and_link_relationships() -> None:
         )
         device = Device(brand="Fluke", device_type="Multimeter", model="Model X", serial_number="SN-001", asset_number="AST-001")
 
-        quote = Quote(quote_number="Q-001", site=site, status="Draft")
+        quote = Quote(quote_number="Q-001", status="Draft")
+        quote_site = QuoteSite(quote=quote, site=site)
         quote_item = QuoteItem(quote=quote, device=device, quantity=2, unit_cost=75.0, unit_price=125.0)
         device_exchange = DeviceExchange(exchange_reference="EX-100", condition="Good")
         calibration_job = CalibrationJob(
@@ -62,7 +64,21 @@ def test_models_create_and_link_relationships() -> None:
             issue_date=datetime(2024, 1, 16),
         )
 
-        session.add_all([customer, study, country, study_country, site, supplier, device, quote, quote_item, device_exchange, calibration_job, calibration_certificate])
+        session.add_all([
+            customer,
+            study,
+            country,
+            study_country,
+            site,
+            supplier,
+            device,
+            quote,
+            quote_site,
+            quote_item,
+            device_exchange,
+            calibration_job,
+            calibration_certificate,
+        ])
         session.commit()
 
         session.refresh(customer)
