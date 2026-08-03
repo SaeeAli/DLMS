@@ -30,7 +30,20 @@ def test_models_create_and_link_relationships() -> None:
         country = Country(name="United Kingdom", country_code="GB")
         study_country = StudyCountry(study=study, country=country, status="Active")
         site = Site(name="North Site", site_number="NS-001", study_country=study_country)
-        supplier = Supplier(name="Precision Instruments", supplier_code="PI-001", contact_email="support@example.com")
+        supplier = Supplier(
+            name="Precision Instruments",
+            country="United Kingdom",
+            city="London",
+            address="1 Calibration Way",
+            contact_person="Alex",
+            email="support@example.com",
+            phone="+44-1234",
+            on_site_calibration=True,
+            exchange_device_available=True,
+            shipping_supported=True,
+            currency="EUR (€)",
+            default_calibration_lead_time_days=14,
+        )
         device = Device(brand="Fluke", device_type="Multimeter", model="Model X", serial_number="SN-001", asset_number="AST-001")
 
         quote = Quote(quote_number="Q-001", site=site, status="Draft")
