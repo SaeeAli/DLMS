@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from database.session import SessionLocal
+from repositories.calibration_repository import CalibrationRepository
 from repositories.country_repository import CountryRepository
 from repositories.customer_repository import CustomerRepository
 from repositories.device_repository import DeviceRepository
@@ -24,6 +25,7 @@ from repositories.site_repository import SiteRepository
 from repositories.study_country_repository import StudyCountryRepository
 from repositories.study_repository import StudyRepository
 from repositories.supplier_repository import SupplierRepository
+from services.calibration_service import CalibrationService
 from services.country_service import CountryService
 from services.customer_service import CustomerService
 from services.device_service import DeviceService
@@ -31,6 +33,7 @@ from services.quote_service import QuoteService
 from services.study_service import StudyService
 from services.supplier_service import SupplierService
 from ui.navigation_manager import NavigationManager
+from ui.pages.calibration_list_page import CalibrationListPage
 from ui.pages.country_list_page import CountryListPage
 from ui.pages.customer_list_page import CustomerListPage
 from ui.pages.dashboard_page import DashboardPage
@@ -74,15 +77,26 @@ class MainWindow(QMainWindow):
             CountryRepository(session),
         )
         supplier_service = SupplierService(SupplierRepository(session))
+        calibration_service = CalibrationService(
+            CalibrationRepository(session),
+            CustomerRepository(session),
+            StudyRepository(session),
+            StudyCountryRepository(session),
+            CountryRepository(session),
+            SiteRepository(session),
+            QuoteRepository(session),
+            DeviceRepository(session),
+            SupplierRepository(session),
+        )
         self.navigation_manager.register(DeviceListPage(device_service))
         self.navigation_manager.register(CustomerListPage(customer_service))
         self.navigation_manager.register(StudyListPage(study_service))
         self.navigation_manager.register(CountryListPage(country_service))
         self.navigation_manager.register(QuoteListPage(quote_service))
         self.navigation_manager.register(SupplierListPage(supplier_service))
+        self.navigation_manager.register(CalibrationListPage(calibration_service))
 
         placeholder_pages = {
-            "calibrations": PlaceholderPage("calibrations", "Calibration Management"),
             "certificates": PlaceholderPage("certificates", "Certificate Management"),
             "reports": PlaceholderPage("reports", "Reports"),
             "settings": PlaceholderPage("settings", "Settings"),
