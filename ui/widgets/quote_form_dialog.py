@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QFormLayout,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
@@ -46,8 +47,52 @@ class QuoteFormDialog(QDialog):
 
         self.study_combo = QComboBox(self)
         self.country_combo = QComboBox(self)
+        self.available_site_list = QListWidget(self)
+        self.available_site_list.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
+        self.available_site_list.setMinimumHeight(120)
+        self.available_site_list.setMaximumHeight(140)
+
         self.site_list = QListWidget(self)
         self.site_list.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
+        self.site_list.setMinimumHeight(120)
+        self.site_list.setMaximumHeight(140)
+
+        self.add_site_button = QPushButton("Add >", self)
+        self.remove_site_button = QPushButton("< Remove", self)
+        self.add_site_button.clicked.connect(self._add_selected_sites)
+        self.remove_site_button.clicked.connect(self._remove_selected_sites)
+
+        sites_selector = QWidget(self)
+        sites_selector_layout = QHBoxLayout(sites_selector)
+        sites_selector_layout.setContentsMargins(0, 0, 0, 0)
+        sites_selector_layout.setSpacing(8)
+
+        available_container = QWidget(self)
+        available_layout = QVBoxLayout(available_container)
+        available_layout.setContentsMargins(0, 0, 0, 0)
+        available_layout.setSpacing(4)
+        available_layout.addWidget(QLabel("Available Sites", self))
+        available_layout.addWidget(self.available_site_list)
+
+        action_container = QWidget(self)
+        action_layout = QVBoxLayout(action_container)
+        action_layout.setContentsMargins(0, 0, 0, 0)
+        action_layout.setSpacing(6)
+        action_layout.addStretch(1)
+        action_layout.addWidget(self.add_site_button)
+        action_layout.addWidget(self.remove_site_button)
+        action_layout.addStretch(1)
+
+        selected_container = QWidget(self)
+        selected_layout = QVBoxLayout(selected_container)
+        selected_layout.setContentsMargins(0, 0, 0, 0)
+        selected_layout.setSpacing(4)
+        selected_layout.addWidget(QLabel("Selected Sites", self))
+        selected_layout.addWidget(self.site_list)
+
+        sites_selector_layout.addWidget(available_container, 1)
+        sites_selector_layout.addWidget(action_container)
+        sites_selector_layout.addWidget(selected_container, 1)
 
         self.quote_date_input = QDateEdit(self)
         self.quote_date_input.setCalendarPopup(True)
@@ -67,7 +112,7 @@ class QuoteFormDialog(QDialog):
         form_layout.addRow("Customer", self.customer_combo)
         form_layout.addRow("Study Number", self.study_combo)
         form_layout.addRow("Country", self.country_combo)
-        form_layout.addRow("Sites", self.site_list)
+        form_layout.addRow("Sites", sites_selector)
         form_layout.addRow("Quote Date", self.quote_date_input)
         form_layout.addRow("Status", self.status_combo)
         form_layout.addRow("Notes", self.notes_input)
@@ -139,7 +184,10 @@ class QuoteFormDialog(QDialog):
 
     def selected_site_ids(self) -> list[str]:
         selected_ids: list[str] = []
-        for item in self.site_list.selectedItems():
+        for i in range(self.site_list.count()):
+            item = self.site_list.item(i)
+            if item is None:
+                continue
             site_id = item.data(Qt.ItemDataRole.UserRole)
             if site_id:
                 selected_ids.append(site_id)
@@ -192,9 +240,14 @@ class QuoteFormDialog(QDialog):
         self.country_combo.blockSignals(False)
 
     def _populate_sites(self, study_id: str | None, country_id: str | None) -> None:
+        selected_site_ids = set(self.selected_site_ids())
+        self.available_site_list.clear()
         self.site_list.clear()
         if not study_id or not country_id:
             return
+
+        available_items: list[tuple[str, str | None]] = []
+        selected_items: list[tuple[str, str | None]] = []
         for site in self._all_sites:
             assignment = site.study_country
             if assignment is None:
@@ -203,13 +256,46 @@ class QuoteFormDialog(QDialog):
                 continue
             if country_id and assignment.country_id != country_id:
                 continue
-            item = QListWidgetItem(site.site_number or "")
-            item.setData(Qt.ItemDataRole.UserRole, site.id)
+            if site.id in selected_site_ids:
+                selected_items.append((site.site_number or "", site.id))
+            else:
+                available_items.append((site.site_number or "", site.id))
+
+        for site_number, site_id in available_items:
+            item = QListWidgetItem(site_number)
+            item.setData(Qt.ItemDataRole.UserRole, site_id)
+            self.available_site_list.addItem(item)
+
+        for site_number, site_id in selected_items:
+            item = QListWidgetItem(site_number)
+            item.setData(Qt.ItemDataRole.UserRole, site_id)
             self.site_list.addItem(item)
 
     def _select_sites(self, site_ids: set[str]) -> None:
-        for i in range(self.site_list.count()):
-            item = self.site_list.item(i)
+        if not site_ids:
+            return
+
+        for i in range(self.available_site_list.count() - 1, -1, -1):
+            item = self.available_site_list.item(i)
             if item is None:
                 continue
-            item.setSelected(item.data(Qt.ItemDataRole.UserRole) in site_ids)
+            if item.data(Qt.ItemDataRole.UserRole) in site_ids:
+                moved = self.available_site_list.takeItem(i)
+                if moved is not None:
+                    self.site_list.addItem(moved)
+
+    def _add_selected_sites(self) -> None:
+        selected = self.available_site_list.selectedItems()
+        indices = sorted((self.available_site_list.row(item) for item in selected), reverse=True)
+        for index in indices:
+            moved = self.available_site_list.takeItem(index)
+            if moved is not None:
+                self.site_list.addItem(moved)
+
+    def _remove_selected_sites(self) -> None:
+        selected = self.site_list.selectedItems()
+        indices = sorted((self.site_list.row(item) for item in selected), reverse=True)
+        for index in indices:
+            moved = self.site_list.takeItem(index)
+            if moved is not None:
+                self.available_site_list.addItem(moved)

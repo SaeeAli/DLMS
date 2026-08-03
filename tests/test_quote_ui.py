@@ -128,7 +128,7 @@ def test_quote_form_dialog_filters_in_customer_study_country_site_order() -> Non
         country_index = dialog.country_combo.findData(country_one.id)
         dialog.country_combo.setCurrentIndex(country_index)
 
-        site_texts = [dialog.site_list.item(i).text() for i in range(dialog.site_list.count())]
+        site_texts = [dialog.available_site_list.item(i).text() for i in range(dialog.available_site_list.count())]
         assert "S-001" in site_texts
         assert "S-002" not in site_texts
 
